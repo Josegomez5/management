@@ -14,7 +14,7 @@ import plotly.io as pio
 # -------- CONFIGURACIÓN DE CONEXIÓN -------- #
 def get_connection():
     return mysql.connector.connect(
-        host = "sh-pro10.hostgator.co";
+        host = "sh-pro10.hostgator.co",
         user="ispeakac_jose",
         password="rOb-4?N,P*KNeoot",
         database="ispeakac_management"
