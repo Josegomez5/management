@@ -1,4 +1,3 @@
-
 # Proyecto: Sistema de Gestión Académica
 # Tecnología: Streamlit + MySQL + Docker o Cloud
 
@@ -130,13 +129,36 @@ def gestion_calificaciones():
     else:
         st.info("No hay calificaciones registradas aún.")
 
-# -------- INICIO -------- #
+# -------- INICIO COMPLETO -------- #
 def main():
     st.title("📚 Sistema de Gestión Académica")
     st.sidebar.title("Menú")
-    opcion = st.sidebar.selectbox("Selecciona una opción", ["Calificaciones"])
+    opcion = st.sidebar.selectbox("Selecciona una opción", [
+        "Dashboard", 
+        "Estudiantes", 
+        "Profesores", 
+        "Cursos", 
+        "Clases y Calendario", 
+        "Pagos", 
+        "Calificaciones", 
+        "Asistencia"
+    ])
 
-    if opcion == "Calificaciones":
+    if opcion == "Dashboard":
+        st.info("🔧 Módulo 'Dashboard' en construcción")
+    elif opcion == "Estudiantes":
+        st.info("🔧 Módulo 'Estudiantes' en construcción")
+    elif opcion == "Profesores":
+        st.info("🔧 Módulo 'Profesores' en construcción")
+    elif opcion == "Cursos":
+        st.info("🔧 Módulo 'Cursos' en construcción")
+    elif opcion == "Clases y Calendario":
+        st.info("🔧 Módulo 'Clases y Calendario' en construcción")
+    elif opcion == "Pagos":
+        st.info("🔧 Módulo 'Pagos' en construcción")
+    elif opcion == "Calificaciones":
+        gestion_calificaciones()
+    elif opcion == "Asistencia":
         gestion_calificaciones()
 
 if __name__ == "__main__":
