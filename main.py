@@ -1,5 +1,6 @@
+
 # Proyecto: Sistema de Gestión Académica
-# Tecnología: Streamlit + MySQL + Docker
+# Tecnología: Streamlit + MySQL + Docker o Cloud
 
 import streamlit as st
 import mysql.connector
@@ -14,10 +15,10 @@ import plotly.io as pio
 # -------- CONFIGURACIÓN DE CONEXIÓN -------- #
 def get_connection():
     return mysql.connector.connect(
-        host = "sh-pro10.hostgator.co",
-        user="ispeakac_jose",
-        password="rOb-4?N,P*KNeoot",
-        database="ispeakac_management"
+        host=st.secrets["db_host"],
+        user=st.secrets["db_user"],
+        password=st.secrets["db_password"],
+        database=st.secrets["db_name"]
     )
 
 # -------- SESIÓN -------- #
@@ -128,3 +129,15 @@ def gestion_calificaciones():
         st.download_button("⬇️ Descargar calificaciones en Excel", data=df.to_excel(index=False), file_name="calificaciones.xlsx")
     else:
         st.info("No hay calificaciones registradas aún.")
+
+# -------- INICIO -------- #
+def main():
+    st.title("📚 Sistema de Gestión Académica")
+    st.sidebar.title("Menú")
+    opcion = st.sidebar.selectbox("Selecciona una opción", ["Calificaciones"])
+
+    if opcion == "Calificaciones":
+        gestion_calificaciones()
+
+if __name__ == "__main__":
+    main()
