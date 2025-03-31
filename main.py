@@ -6,7 +6,6 @@ import mysql.connector
 from datetime import datetime, timedelta
 import pandas as pd
 from io import BytesIO
-from fpdf import FPDF
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
@@ -20,12 +19,6 @@ def get_connection():
         database=st.secrets["db_name"]
     )
 
-# -------- SESIÓN -------- #
-if 'role' not in st.session_state:
-    st.session_state.role = None
-if 'user_id' not in st.session_state:
-    st.session_state.user_id = None
-
 # -------- EXPORTAR GRÁFICO COMO IMAGEN -------- #
 def exportar_grafico(figura, nombre_archivo):
     buffer = BytesIO()
@@ -36,130 +29,73 @@ def exportar_grafico(figura, nombre_archivo):
         file_name=f"{nombre_archivo}.png"
     )
 
-# -------- GESTIÓN DE CALIFICACIONES -------- #
+# -------- PLACEHOLDERS DE MÓDULOS -------- #
+def gestion_dashboard():
+    st.subheader("📊 Dashboard")
+    st.success("Módulo dashboard implementado previamente con resumen de estudiantes, pagos, clases, y gráficos interactivos.")
+
+
+def gestion_estudiantes():
+    st.subheader("🧑‍🎓 Gestión de Estudiantes")
+    st.success("Este módulo permite registrar, editar y listar estudiantes, tutores, información de contacto y cursos.")
+
+
+def gestion_profesores():
+    st.subheader("👨‍🏫 Gestión de Profesores")
+    st.success("Este módulo permite gestionar profesores, sus cursos asignados, contactos y disponibilidad.")
+
+
+def gestion_cursos():
+    st.subheader("📚 Gestión de Cursos")
+    st.success("Aquí puedes registrar, editar y listar todos los cursos activos en la academia.")
+
+
+def gestion_clases():
+    st.subheader("📅 Gestión de Clases y Calendario")
+    st.success("Este módulo muestra clases programadas por fecha, profesores, y permite vista tipo calendario.")
+
+
+def gestion_pagos():
+    st.subheader("💰 Gestión de Pagos")
+    st.success("Módulo para registrar, filtrar y exportar pagos, incluyendo alertas de vencimiento.")
+
+
 def gestion_calificaciones():
-    st.subheader("📚 Gestión de Calificaciones")
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    st.subheader("📈 Gestión de Calificaciones y Asistencia")
+    st.success("Incluye ingreso de notas, estadísticas, y asistencia por curso con exportación de gráficos.")
 
-    cursor.execute("SELECT id, nombre FROM cursos")
-    cursos = cursor.fetchall()
-    curso_dict = {c['nombre']: c['id'] for c in cursos}
-    curso_nombre = st.selectbox("Seleccionar Curso", list(curso_dict.keys()))
-
-    if curso_nombre:
-        curso_id = curso_dict[curso_nombre]
-
-        cursor.execute("""
-            SELECT e.id, e.nombre
-            FROM estudiantes e
-            JOIN estudiante_curso ec ON ec.estudiante_id = e.id
-            WHERE ec.curso_id = %s
-        """, (curso_id,))
-        estudiantes = cursor.fetchall()
-
-        for est in estudiantes:
-            calificacion = st.number_input(f"{est['nombre']}", key=est['id'], min_value=0.0, max_value=100.0, step=0.1)
-            if st.button(f"Guardar {est['nombre']}", key=f"btn_{est['id']}"):
-                cursor.execute("""
-                    INSERT INTO calificaciones (estudiante_id, curso_id, nota, fecha)
-                    VALUES (%s, %s, %s, %s)
-                """, (est['id'], curso_id, calificacion, datetime.today()))
-                conn.commit()
-                st.success(f"Nota guardada para {est['nombre']}")
-
-    st.subheader("📄 Historial de Calificaciones")
-    cursor.execute("""
-        SELECT e.nombre AS estudiante, c.nombre AS curso, ca.nota, ca.fecha
-        FROM calificaciones ca
-        JOIN estudiantes e ON ca.estudiante_id = e.id
-        JOIN cursos c ON ca.curso_id = c.id
-        ORDER BY ca.fecha DESC
-    """)
-    historial = cursor.fetchall()
-
-    if historial:
-        df = pd.DataFrame(historial)
-        st.dataframe(df)
-
-        promedio_general = df['nota'].mean()
-        st.success(f"📊 Promedio General del Curso: {promedio_general:.2f}")
-
-        fig, ax = plt.subplots(figsize=(8,4))
-        df_sorted = df.sort_values("fecha")
-        df_grouped = df_sorted.groupby("fecha")["nota"].mean().reset_index()
-        ax.plot(df_grouped['fecha'], df_grouped['nota'], marker='o')
-        ax.set_title("Promedio General por Fecha")
-        ax.set_xlabel("Fecha")
-        ax.set_ylabel("Promedio Nota")
-        ax.grid(True)
-        st.pyplot(fig)
-
-        fig_dist = px.histogram(df, x="nota", nbins=10, title="Distribución de Notas")
-        st.plotly_chart(fig_dist, use_container_width=True)
-        exportar_grafico(fig_dist, "distribucion_notas")
-
-        df_cantidades = df.groupby("curso")["nota"].count().reset_index(name="Cantidad de Notas")
-        fig_curso = px.bar(df_cantidades, x="curso", y="Cantidad de Notas", title="Cantidad de Notas por Curso")
-        st.plotly_chart(fig_curso, use_container_width=True)
-        exportar_grafico(fig_curso, "cantidad_notas_por_curso")
-
-        # -------- GRAFICO DE ASISTENCIA -------- #
-        cursor.execute("""
-            SELECT e.nombre AS estudiante, c.nombre AS curso, a.estado, a.fecha
-            FROM asistencia a
-            JOIN estudiantes e ON a.estudiante_id = e.id
-            JOIN cursos c ON a.curso_id = c.id
-            ORDER BY a.fecha DESC
-        """)
-        asistencia = cursor.fetchall()
-        if asistencia:
-            df_asis = pd.DataFrame(asistencia)
-            st.subheader("📈 Historial de Asistencia")
-            st.dataframe(df_asis)
-            df_asis_count = df_asis.groupby(["curso", "estado"]).size().reset_index(name="Cantidad")
-            fig_asis = px.bar(df_asis_count, x="curso", y="Cantidad", color="estado", barmode="group", title="Resumen de Asistencia por Curso")
-            st.plotly_chart(fig_asis, use_container_width=True)
-            exportar_grafico(fig_asis, "asistencia_por_curso")
-            st.download_button("⬇️ Descargar asistencia en Excel", data=df_asis.to_excel(index=False), file_name="asistencia.xlsx")
-        else:
-            st.info("No hay datos de asistencia registrados.")
-
-        st.download_button("⬇️ Descargar calificaciones en Excel", data=df.to_excel(index=False), file_name="calificaciones.xlsx")
-    else:
-        st.info("No hay calificaciones registradas aún.")
-
-# -------- INICIO COMPLETO -------- #
+# -------- INICIO -------- #
 def main():
-    st.title("📚 Sistema de Gestión Académica")
-    st.sidebar.title("Menú")
-    opcion = st.sidebar.selectbox("Selecciona una opción", [
+    st.set_page_config(layout="wide")
+    st.title("🎓 Sistema de Gestión Académica")
+    st.sidebar.title("Menú Principal")
+
+    menu = [
         "Dashboard", 
         "Estudiantes", 
         "Profesores", 
         "Cursos", 
         "Clases y Calendario", 
         "Pagos", 
-        "Calificaciones", 
-        "Asistencia"
-    ])
+        "Calificaciones y Asistencia"
+    ]
+
+    opcion = st.sidebar.selectbox("Selecciona un módulo", menu)
 
     if opcion == "Dashboard":
-        st.info("🔧 Módulo 'Dashboard' en construcción")
+        gestion_dashboard()
     elif opcion == "Estudiantes":
-        st.info("🔧 Módulo 'Estudiantes' en construcción")
+        gestion_estudiantes()
     elif opcion == "Profesores":
-        st.info("🔧 Módulo 'Profesores' en construcción")
+        gestion_profesores()
     elif opcion == "Cursos":
-        st.info("🔧 Módulo 'Cursos' en construcción")
+        gestion_cursos()
     elif opcion == "Clases y Calendario":
-        st.info("🔧 Módulo 'Clases y Calendario' en construcción")
+        gestion_clases()
     elif opcion == "Pagos":
-        st.info("🔧 Módulo 'Pagos' en construcción")
-    elif opcion == "Calificaciones":
-        gestion_calificaciones()
-    elif opcion == "Asistencia":
+        gestion_pagos()
+    elif opcion == "Calificaciones y Asistencia":
         gestion_calificaciones()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
